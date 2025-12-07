@@ -1,0 +1,43 @@
+name: Get labels
+description: "Returns labels of pull requests associated with github.sha or merge group PR number"
+inputs:
+  token:
+    description: "Specify a custom GitHub token otherwise uses github token"
+    required: false
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - name: Output labels
+      id: label
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token || github.token }}
+        REF_NAME: ${{ github.ref_name }}
+        EVENT_NAME: ${{ github.event_name }}
+      run: |
+        if [[ "$EVENT_NAME" == "merge_group" && "$REF_NAME" =~ /pr-([0-9]+)- ]]; then
+          PR_NUMBER="${BASH_REMATCH[1]}"
+          NAMES=$(gh api repos/${{ github.repository }}/pulls/$PR_NUMBER --jq '.labels | map(.name)')
+        else
+          NAMES=$(gh api graphql -f query='
+            query($sha: String!) {
+              search(query: $sha, type: ISSUE, first: 1) {
+                edges {
+                  node {
+                    ... on PullRequest {
+                      labels(first: 10) {
+                        nodes { name }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ' -f sha="${{ github.event.pull_request.head.sha || github.sha }}" --jq '(.data.search.edges[0].node.labels.nodes // []) | map(.name)')
+        fi
+        echo "labels=$NAMES" >> "$GITHUB_OUTPUT"
+outputs:
+  labels:
+    description: "Labels of the PR associated with github.sha"
+    value: ${{ steps.label.outputs.labels }}
