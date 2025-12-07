@@ -1,0 +1,20 @@
+name: Pull Request
+
+on:
+  pull_request:
+  workflow_call:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: action-lint
+        uses: raven-actions/actionlint@v2.0.1
+
+      - name: action-validator
+        uses: mpalmer/action-validator@main
+        with:
+          version: latest
