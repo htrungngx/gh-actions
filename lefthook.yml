@@ -1,0 +1,18 @@
+output:
+  - success
+  - failure
+
+pre-commit:
+  parallel: true
+  jobs:
+    - name: action-validator
+      run: git ls-files -z '.github/*/*.yml' '*/action.yml' | xargs -0 action-validator --verbose
+
+    - name: action-lint
+      glob: ".github/workflows/**/*.yml"
+      run: actionlint -color {staged_files}
+
+    - name: prettier
+      glob: "*{.md,.yml}"
+      run: prettier --write {staged_files}
+      stage_fixed: true

@@ -1,0 +1,11 @@
+name: Master
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  validate:
+    name: Validate
+    uses: ./.github/workflows/pull_request.yml
